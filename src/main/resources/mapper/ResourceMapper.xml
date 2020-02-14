@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yy.gm.mapper.ResourceMapper">
+
+	<resultMap id="ResourceMenuMap" type="com.yy.gm.entity.Resource">
+		<id column="res_uuid" property="res_uuid" />
+		<result column="res_url" property="res_url" />
+		<result column="menu_id" property="menu_id" />
+		<result column="dir_code" property="dir_code" />
+		<result column="dir_name" property="dir_name" />
+		<result column="dir_level_number" property="dir_level_number" />
+		<result column="parent_id" property="parent_id" />
+		<result column="isitem" property="isitem" />
+		<result column="dir_order" property="dir_order" />
+		<result column="status" property="status" />
+		<result column="flag" property="flag" />
+		<result column="locale" property="locale" />
+		<!-- 多对一的关系 -->
+		<association property="parent" javaType="com.yy.gm.entity.Resource">
+			<id column="pid" property="menu_id" />
+			<result column="pname" property="dir_name" />
+		</association>
+	</resultMap>
+
+	<sql id="sql1">
+		select res.res_uuid, res.res_url, temp.menu_id,
+		temp.dir_code, temp.dir_name, temp.dir_level_number,
+		temp.parent_id, temp.isitem, temp.dir_order,temp.status, temp.flag, temp.locale,
+		temp.pid, temp.pname
+		from pt_res res left join
+		(
+		select a.*, b.parent_id as pid,
+		case when a.parent_id = 'root' then 'Root' else b.dir_name end as pname
+		from pt_menu_directory a left JOIN pt_menu_directory b on a.parent_id
+		= b.menu_id
+		) temp
+		on res.res_uuid = temp.res_uuid
+	</sql>
+
+	<select id="getCount" resultType="java.lang.Integer">
+		select count(*) from pt_res
+	</select>
+
+	<select id="getResources" resultMap="ResourceMenuMap">
+		<include refid="sql1" />
+		limit #{pageNum},#{pageSize}
+	</select>
+
+	<select id="getResource" resultMap="ResourceMenuMap">
+		<include refid="sql1" />
+		where res.res_uuid = #{res_uuid}
+	</select>
+
+	<select id="getResourcesByParentId" resultType="com.yy.gm.entity.Node">
+		select menu_id as
+		id, parent_id as pid, dir_name as name from pt_menu_directory where
+		parent_id = #{parentId} order by dir_order
+	</select>
+
+	<insert id="insertResource" parameterType="com.yy.gm.entity.Resource">
+		<selectKey keyProperty="res_uuid"
+			resultType="java.lang.String" order="BEFORE">
+			select UUID_SHORT()
+		</selectKey>
+		insert into pt_res(res_uuid,res_url) values (#{res_uuid},#{res_url})
+	</insert>
+
+	<insert id="insertMenu" parameterType="com.yy.gm.entity.Resource">
+		insert into
+		pt_menu_directory(menu_id, dir_code, dir_name, dir_level_number,
+		parent_id, isitem,
+		dir_order, status, flag, locale, res_uuid) values
+		(#{res_uuid}, #{dir_code}, #{dir_name}, #{dir_level_number},
+		#{parent_id}, #{isitem}, #{dir_order}, #{status}, #{flag},
+		#{locale},#{res_uuid})
+	</insert>
+
+	<update id="updateResource" parameterType="com.yy.gm.entity.Resource">
+		update pt_res
+		<set>
+			res_url = #{res_url}
+		</set>
+		<where>
+			res_uuid = #{res_uuid}
+		</where>
+	</update>
+
+	<update id="updateMenu" parameterType="com.yy.gm.entity.Resource">
+		update pt_menu_directory
+		<set>
+			dir_code = #{dir_code},
+			dir_name = #{dir_name},
+			dir_level_number =
+			#{dir_level_number},
+			parent_id = #{parent_id},
+			isitem = #{isitem},
+			dir_order =
+			#{dir_order},
+			status = #{status},
+			flag = #{flag},
+			locale =
+			#{locale}
+		</set>
+		<where>
+			menu_id = #{res_uuid}
+		</where>
+	</update>
+
+	<delete id="removeResource">
+		delete from pt_res where res_uuid = #{id}
+	</delete>
+
+	<delete id="removeMenu">
+		delete from pt_menu_directory where menu_id = #{id}
+	</delete>
+
+</mapper>

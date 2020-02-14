@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yy.gm.mapper.UserMapper">
+    <resultMap id="UserMap" type="com.yy.gm.entity.User">
+        <id column="user_uuid" property="user_uuid" />
+        <result column="username" property="username" />
+        <result column="password" property="password" />
+        <result column="email" property="email" />
+        <result column="mobile" property="mobile" />
+        <result column="enabled" property="enabled" />
+        <result column="nice_name" property="nice_name" />
+        <result column="status" property="status" />
+        <result column="is_admin" property="is_admin" />
+        <result column="pwdque" property="pwdque" />
+        <result column="pwdans" property="pwdans" />
+        <result column="remark" property="remark" />
+        <result column="is_sun" property="is_sun" />
+        <!-- 多对一的关系 -->
+        <association property="organ" javaType="com.yy.gm.entity.Organization" >
+            <id column="organ_uuid" property="organ_uuid" />
+            <result column="organ_name" property="organ_name" />
+        </association>
+
+        <collection property="duties" ofType="com.yy.gm.entity.Duty" column="user_uuid">
+            <id column="dutyid" property="dutyId" />
+            <!-- <result column="x" property="x" /> -->
+        </collection>
+    </resultMap>
+    <insert id="insert">
+        <selectKey keyProperty="user_uuid" resultType="java.lang.String" order="BEFORE">
+            select UUID_SHORT()
+        </selectKey>
+        insert into pt_user values(#{user_uuid}, #{username}, #{password}, #{email}, #{mobile},
+        #{enabled},
+        #{organ.organ_uuid}, #{nice_name}, #{is_admin},
+        sysdate(), sysdate(),
+        #{pwdque}, #{pwdans}, #{remark}, #{status}, current_timestamp(), 'yy', #{is_sun})
+    </insert>
+    <insert id="insertUserDuty">
+        insert into pt_r_user_duty_org values
+        <foreach collection="duties" item="duty" index="index" separator=",">
+            <if test="duty.dutyId != null">
+                (UUID_SHORT(), #{userId},#{duty.dutyId})
+            </if>
+        </foreach>
+    </insert>
+    <update id="update">
+        update pt_user
+        <set>
+            username = #{username},
+            password = #{password},
+            email = #{email},
+            mobile = #{mobile},
+            enabled = #{enabled},
+            organ_uuid = #{organ.organ_uuid},
+            nice_name = #{nice_name},
+            is_admin = #{is_admin},
+            pwdque = #{pwdque},
+            pwdans = #{pwdans},
+            remark = #{remark},
+            modtime = current_timestamp(),
+            is_sun =
+            #{is_sun}
+        </set>
+        <where>
+            user_uuid = #{user_uuid}
+        </where>
+    </update>
+    <delete id="deleteUserDuty">
+        delete from pt_r_user_duty_org where user_uuid = #{userId}
+    </delete>
+    <select id="getCount" resultType="java.lang.Integer">
+        select count(*) from pt_user
+    </select>
+    <select id="getUsers" resultMap="UserMap">
+        select a.*,b.organ_uuid
+        from pt_user as a left join pt_organ as b on a.organ_uuid=b.organ_uuid
+        limit #{pageNum},#{pageSize}
+    </select>
+    <select id="getUser" resultMap="UserMap">
+        select a.*,b.organ_uuid,c.dutyid
+        from pt_user as a left join pt_organ as b on a.organ_uuid=b.organ_uuid
+        left join pt_r_user_duty_org as c on a.user_uuid=c.user_uuid
+        where a.user_uuid=#{id}
+    </select>
+</mapper>

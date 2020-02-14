@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yy.gm.mapper.RoleMapper">
+    <resultMap id="roleRM" type="com.yy.gm.entity.Role">
+        <id property="role_uuid" column="role_uuid"/>
+        <result property="role_id" column="role_id"/>
+        <result property="role_name" column="role_name"/>
+    </resultMap>
+    <insert id="insert" parameterType="com.yy.gm.entity.Role" >
+        insert into pt_role(<if test="role_uuid !=null and role_uuid !=''">role_uuid,</if>role_id,role_name) values (<if test="role_uuid !=null and role_uuid !=''">#{role_uuid},</if>#{role_id},#{role_name})
+    </insert>
+    <insert id="linkResource">
+        insert into pt_role_res values 
+        <foreach collection="resources" index="index" item="resourceId" separator="," open="(" close=")">
+            #{roleId},#{resources}
+        </foreach>
+    </insert>
+    <update id="update" parameterType="com.yy.gm.entity.Role">
+        update pt_role set role_id=#{role_id},role_name=#{role_name} where role_uuid=#{role_uuid}
+    </update>
+    <delete id="remove">
+        delete from pt_role where role_uuid=#{id}
+    </delete>
+    <delete id="removeResource">
+        delete from pt_role_res where res_uuid in (select a.resid from (select res_uuid as resid from pt_role_res where role_uuid = #{roleId}) a)
+    </delete>
+
+    <select id="getRole" resultMap="roleRM" parameterType="string">
+        select pt_role.role_uuid,pt_role.role_id,pt_role.role_name from pt_role where role_uuid=#{id}
+    </select>
+    <select id="getRoles" resultMap="roleRM">
+        select pt_role.role_uuid,pt_role.role_id,pt_role.role_name from pt_role limit #{pageNum},#{pageSize}
+    </select>
+    <select id="getCount" resultType="java.lang.Integer">
+        select count(*) from pt_role
+    </select>
+    <select id="getResources" resultType="java.lang.String">
+        select res_uuid from pt_role_res where role_uuid=#{roleId}
+    </select>
+
+
+</mapper>

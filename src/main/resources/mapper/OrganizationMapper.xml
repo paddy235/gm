@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yy.gm.mapper.OrganizationMapper">
+
+	<resultMap id="OrganizationMap" type="com.yy.gm.entity.Organization">
+		<id column="organ_uuid" property="organ_uuid" />
+		<result column="organ_code" property="organ_code" />
+		<result column="organ_name" property="organ_name" />
+		<result column="organ_type" property="organ_type" />
+		<result column="in_use" property="in_use" />
+		<result column="parent_uuid" property="parent_uuid" />
+		<result column="status" property="status" />
+		<result column="modtime" property="modtime" />
+		<result column="description" property="description" />
+		<result column="account_code" property="account_code" />
+		<result column="shortname" property="shortname" />
+
+		<!-- 多对一的关系 -->
+		<association property="parent" javaType="com.yy.gm.entity.Organization">
+			<id column="pid" property="organ_uuid" />
+			<result column="pname" property="organ_name" />
+		</association>
+	</resultMap>
+
+	<select id="getCount" resultType="java.lang.Integer">
+		select count(*) from pt_organ
+	</select>
+
+	<select id="getOrganizations" resultMap="OrganizationMap">
+		SELECT a.*, b.organ_uuid as pid,
+		case
+		when a.parent_uuid = '-1' then '国电集团'
+		when a.parent_uuid =
+		'outroot' then '外部组织'
+		else b.organ_name end as pname
+		from pt_organ a left JOIN pt_organ b on a.parent_uuid = b.organ_uuid order by pname limit
+		#{pageNum}, #{pageSize}
+	</select>
+
+	<select id="getOrganization" resultMap="OrganizationMap">
+		SELECT a.*, b.organ_uuid as pid,
+		case
+		when a.parent_uuid = '-1' then '国电集团'
+		when a.parent_uuid = 'outroot'
+		then '外部组织'
+		else b.organ_name end as pname from pt_organ a left JOIN pt_organ b on a.parent_uuid = b.organ_uuid where a.organ_uuid = #{uuid}
+	</select>
+
+	<select id="getOrganizationsByParentUUID" resultType="com.yy.gm.entity.Node">
+		select organ_uuid as id, parent_uuid as pid, organ_name as name from pt_organ where parent_uuid = #{parentUUID}
+	</select>
+
+	<insert id="insertOrganization" parameterType="com.yy.gm.entity.Organization">
+		insert into pt_organ
+		values(UUID_SHORT(),#{organ_code},#{organ_name},#{organ_type},#{in_use},#{parent_uuid},#{status},'zz',#{modtime},#{description},#{account_code},#{shortname})
+	</insert>
+
+
+	<update id="updateOrganization" parameterType="com.yy.gm.entity.Organization">
+		update pt_organ
+		<set>
+			organ_code = #{organ_code},
+			organ_name = #{organ_name},
+			organ_type = #{organ_type},
+			in_use = #{in_use},
+			parent_uuid = #{parent_uuid},
+			status =
+			#{status},
+			modtime = #{modtime},
+			description = #{description},
+			account_code = #{account_code},
+			shortname = #{shortname}
+		</set>
+		<where>
+			organ_uuid = #{organ_uuid}
+		</where>
+
+	</update>
+
+	<delete id="removeOrganization" parameterType="com.yy.gm.entity.Organization">
+		delete from pt_organ where organ_uuid = #{id}
+	</delete>
+</mapper>

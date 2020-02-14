@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yy.gm.mapper.DutyMapper">
+
+	<resultMap id="DutyMap" type="com.yy.gm.entity.Duty">
+		<id column="dutyid" property="dutyId" />
+		<result column="name" property="name" />
+		<!-- 多对一的关系 -->
+		<association property="organ" javaType="com.yy.gm.entity.Organization">
+			<id column="organ_uuid" property="organ_uuid" />
+			<result column="organ_name" property="organ_name" />
+		</association>
+		<!-- 多对一的关系 -->
+		<association property="role" javaType="com.yy.gm.entity.Role">
+			<id column="role_uuid" property="role_uuid" />
+			<result column="role_name" property="role_name" />
+		</association>
+	</resultMap>
+
+	<select id="getDuties" resultMap="DutyMap">
+		select a.*, b.organ_name,c.role_name from pt_r_role_organ a
+		left join pt_organ b on a.organ_uuid = b.organ_uuid left join pt_role c on a.role_uuid = c.role_uuid limit
+		#{pageNum}, #{pageSize}
+	</select>
+
+	<select id="getDuty" resultMap="DutyMap">
+		select a.*, b.organ_name as orgname, c.role_name as rolename from pt_r_role_organ a
+		left join pt_organ b on a.organ_uuid = b.organ_uuid left join pt_role c on a.role_uuid = c.role_uuid
+		where a.dutyid = #{dutyId}
+	</select>
+	
+	<select id="getDutyByOrganId" resultMap="DutyMap">
+		select a.*, b.organ_name as orgname, c.role_name as rolename from pt_r_role_organ a
+		left join pt_organ b on a.organ_uuid = b.organ_uuid left join pt_role c on a.role_uuid = c.role_uuid
+		where a.organ_uuid = #{organId}
+	</select>
+
+	<select id="getCount" resultType="java.lang.Integer">
+		select count(*) from pt_r_role_organ
+	</select>
+
+	<insert id="insertDuty" parameterType="com.yy.gm.entity.Duty">
+		insert into pt_r_role_organ values (UUID_SHORT(),#{name},#{organ.organ_uuid},#{role.role_uuid})
+	</insert>
+
+	<update id="updateDuty" parameterType="com.yy.gm.entity.Duty">
+		update pt_r_role_organ
+		<set>
+			name = #{name},
+			organ_uuid = #{organ.organ_uuid},
+			role_uuid = #{role.role_uuid}
+		</set>
+		<where>
+			dutyid = #{dutyId}
+		</where>
+	</update>
+
+	<delete id="removeDuty" parameterType="com.yy.gm.entity.Duty">
+		delete from pt_r_role_organ where dutyid = #{id}
+	</delete>
+
+</mapper>
