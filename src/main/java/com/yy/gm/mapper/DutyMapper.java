@@ -7,8 +7,7 @@ import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 @Mapper
-public interface DutyMapper
-{
+public interface DutyMapper {
 	public int getCount();
 
 	public List<Duty> getDuties(@Param("pageNum") int pageNum, @Param("pageSize") int pageSize);
